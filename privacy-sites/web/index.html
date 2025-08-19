@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Privacy Links Hoster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --bg: #0b1020;
+            --panel: #0f1731;
+            --text: #e9edf7;
+            --muted: #a9b7da;
+            --accent: #6aa7ff;
+            --border: #1d2a4d;
+            --ok: #35c26b;
+            --err: #ff667a;
+            --warn: #ffb84d
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(180deg,#0a0f22,#0b1020);
+            color: var(--text);
+            font: 15px/1.6 system-ui,Segoe UI,Roboto
+        }
+
+        .wrap {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 0 20px
+        }
+
+        .hero {
+            padding: 24px 20px 8px
+        }
+
+        .h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0
+        }
+
+        .sub {
+            color: var(--muted);
+            margin: 6px 0 0
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,.35)
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px
+        }
+
+        label {
+            display: block;
+            margin: 12px 0 6px;
+            color: var(--muted)
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #0c1330;
+            color: var(--text)
+        }
+
+            input:focus {
+                outline: 2px solid var(--accent)
+            }
+
+        .row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-top: 10px
+        }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px
+        }
+
+        .btn {
+            cursor: pointer;
+            background: var(--accent);
+            border: 0;
+            font-weight: 700;
+            transition: transform .06s ease
+        }
+
+            .btn:active {
+                transform: scale(.99)
+            }
+
+            .btn:disabled {
+                opacity: .6;
+                cursor: not-allowed
+            }
+
+        .out {
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            background: #0f1836
+        }
+
+        .ok {
+            color: var(--ok)
+        }
+
+        .err {
+            color: var(--err)
+        }
+
+        .warn {
+            color: var(--warn)
+        }
+
+        .url {
+            font-family: ui-monospace,Menlo,Consolas,monospace
+        }
+
+        .status {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #0f1836
+        }
+
+            .status.show {
+                display: flex
+            }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--muted);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+            opacity: .5
+        }
+
+        .step.active .dot {
+            opacity: 1
+        }
+    </style>
+    <script type="module" defer src="/main.js?v=6"></script>
+</head>
+<body>
+    <div class="wrap">
+        <section class="hero">
+            <h1 class="h1">Privacy Links Hoster</h1>
+            <p class="sub">Create a unique <span class="url">https://&lt;slug&gt;.web.app/PrivacyPolicies</span> page for your app. Pick a random template each time.</p>
+        </section>
+
+        <div class="card">
+            <div class="grid">
+                <div>
+                    <label for="slug">Site Slug (unique)</label>
+                    <input id="slug" placeholder="e.g. tiny-rummor" />
+                    <div class="hint">Policy URL → <span class="url" id="urlPreview">https://…</span></div>
+                </div>
+                <div>
+                    <label for="name">Product / App Name</label>
+                    <input id="name" placeholder="e.g. Tiny Rummor" />
+                </div>
+            </div>
+
+            <div class="grid" style="margin-top:8px">
+                <div>
+                    <label for="email">Contact Email</label>
+                    <input id="email" placeholder="support@studio.com" />
+                    <div class="hint">Used to fill placeholders in the template.</div>
+                </div>
+                <div class="row">
+                    <div class="toggle">
+                        <input type="checkbox" id="rotate" checked />
+                        <label for="rotate">Use a new random template (even with the same slug)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="createBtn" class="btn">Create Policy Link</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+
+            <div id="status" class="status" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <div>
+                    <div class="step active" id="st1"><span class="dot"></span> Creating site…</div>
+                    <div class="step" id="st2"><span class="dot"></span> Selecting template…</div>
+                    <div class="step" id="st3"><span class="dot"></span> Uploading & releasing…</div>
+                </div>
+            </div>
+
+            <div id="out" class="out" hidden></div>
+        </div>
+    </div>
+</body>
+</html>
