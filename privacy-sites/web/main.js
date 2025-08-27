@@ -1,290 +1,213 @@
-﻿/* ============== DOM refs ============== */
+// ---- helpers ----
 const $ = (s) => document.querySelector(s);
-const nameEl = $("#name");
-const emailEl = $("#email");
-const slugEl = $("#slug");
-const genBtn = $("#genSlug");
-const presetHidden = $("#preset");
-const presetPills = document.querySelectorAll(".pill");
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const ENDPOINTS = {
+  checkSlug: "/checkSlug",
+  create: "/createPolicySite",
+  previewAI: "/previewPolicyHtml",
+  publishAI: "/publishAiPolicy",
+  previewTemplate: "/previewTemplate",
+  publishTemplate: "/publishTemplate",
+};
 
-const urlPreview = $("#urlPreview");
-const slugMsg = $("#slugMsg");
-const slugError = $("#slugError");
-let slugSug = $("#slugSug");
-if (!slugSug) {
-    slugSug = document.createElement("div");
-    slugSug.id = "slugSug";
-    slugSug.style.marginTop = "6px";
-    slugMsg.insertAdjacentElement("afterend", slugSug);
+function sanitizeSlug(s){ return (s||"").toLowerCase().replace(/[^a-z0-9-]/g,"-").replace(/-+/g,"-").replace(/^-+|-+$/g,"").slice(0,30); }
+function slugFromName(name){ return sanitizeSlug((name||"").replace(/&/g," and ").replace(/[’'‘]/g,"").replace(/[^a-z0-9]+/gi,"-")); }
+
+const state = { tone: "professional", slugStatus: "unknown", aiHtml: "", fast: { html: "", templateName: "" }, stylePack: null, aiVariation: "" };
+
+const nameEl = $("#name"), emailEl = $("#email"), slugEl = $("#slug"), genSlug = $("#genSlug");
+const slugMsg = $("#slugMsg"), slugError = $("#slugError"), urlPreview = $("#urlPreview");
+const tonePills = $$(".pill[data-value]");
+const btnPreviewTemplate = $("#btnPreviewTemplate"), btnCreateFast = $("#btnCreateFast");
+const aiPrompt = $("#aiPrompt"), btnPreviewAI = $("#btnPreviewAI");
+const statusFast = $("#statusFast"), outFast = $("#outFast");
+const statusCustom = $("#statusCustom"), outCustom = $("#outCustom");
+
+const aiModal = $("#aiModal"), aiTitle = $("#aiModalTitle"), aiFrame = $("#aiFrame");
+const aiHint = $("#aiModalHint"), aiBody = $("#aiModalBody");
+const aiRefreshBtn = $("#aiRefreshBtn"), aiPublishBtn = $("#aiPublishBtn"), aiCloseBtn = $("#aiCloseBtn");
+
+function updateUrlPreview(){ if(!urlPreview) return; const s = sanitizeSlug(slugEl?.value); urlPreview.textContent = s ? `https://${s}.web.app/PrivacyPolicies` : "https://…"; }
+
+function suggestSlug(){
+  const base = slugFromName(nameEl?.value || "app");
+  const lists = {
+    professional: [`${base}`,`get-${base}`,`${base}-app`,`${base}-studio`,`${base}-labs`],
+    playful: [`hey-${base}`,`super-${base}`,`app-${base}`,`${base}-fun`,`cool-${base}`],
+    techy: [`${base}-dev`,`${base}-tech`,`use-${base}`,`run-${base}`,`data-${base}`],
+  };
+  const arr = lists[state.tone]||[base];
+  return arr[Math.floor(Math.random()*arr.length)];
 }
 
-const createBtn = $("#createBtn");
-const randBtn = $("#randBtn");
-const resetBtn = $("#resetBtn");
-const statusBar = $("#status");
-const st1 = $("#st1");
-const st2 = $("#st2");
-const out = $("#out");
-
-/* ============== session gating (per tab) ============== */
-const sessionKey = "plh:lastCreatedSlug"; // cleared automatically when tab closes
-let lastCreatedSlug = sessionStorage.getItem(sessionKey) || null;
-function setSessionSlug(slug) {
-    lastCreatedSlug = slug;
-    if (slug) sessionStorage.setItem(sessionKey, slug);
-}
-function clearSessionSlug() {
-    lastCreatedSlug = null;
-    sessionStorage.removeItem(sessionKey);
-}
-
-/* ============== helpers ============== */
-const sanitizeSlug = (s) =>
-    (s || "").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30);
-const baseFromName = (n) => sanitizeSlug(n).replace(/-+/g, "-");
-const randToken = (len = 5) => Math.floor(Math.random() * Math.pow(36, len)).toString(36).padStart(len, "0");
-
-function suggestSlug(base, style = "professional") {
-    base = base || "app";
-    const core = baseFromName(base) || "app";
-    const pools = {
-        professional: [`get-${core}`, `${core}-hq`, `${core}-studio`, `${core}-works`, `${core}-labs`, `${core}-${randToken(3)}`, `use-${core}`, `try-${core}`],
-        playful: [`${core}-buddies`, `super-${core}`, `happy-${core}`, `${core}-zone`, `${core}-spark`, `${core}-${randToken(4)}`, `go-${core}`],
-        techy: [`${core}-dev`, `data-${core}`, `${core}-io`, `${core}-stack`, `safe-${core}`, `${core}-${randToken(5)}`, `user-${core}`],
-    };
-    const list = pools[style] || pools.professional;
-    return sanitizeSlug(list[Math.floor(Math.random() * list.length)]);
-}
-
-function setMsgOk(msg) { slugError.style.display = "none"; slugMsg.className = "field-msg field-ok"; slugMsg.textContent = msg; slugSug.innerHTML = ""; }
-function setMsgHint(msg) { slugError.style.display = "none"; slugMsg.className = "field-msg field-hint"; slugMsg.textContent = msg; slugSug.innerHTML = ""; }
-function showError(msg) { slugMsg.className = "field-msg field-hint"; slugMsg.textContent = ""; slugError.style.display = "block"; slugError.textContent = msg; }
-function renderSuggestions(list = []) {
-    slugSug.innerHTML = "";
-    list.slice(0, 3).forEach((s) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.textContent = s;
-        b.className = "chip";
-        b.style.cssText = "margin-right:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:#0b1324;color:#cde;cursor:pointer";
-        b.addEventListener("click", () => { slugEl.value = s; userEditedSlug = true; queueAvailabilityCheck(); });
-        slugSug.appendChild(b);
-    });
-}
-function setUrlPreview(slug) { const safe = sanitizeSlug(slug); urlPreview.textContent = safe ? `https://${safe}.web.app/PrivacyPolicies` : "https://…"; }
-function setCreateEnabled(can) { createBtn.disabled = !can; }
-function setRandomizeEnabled(can) { randBtn.disabled = !can; }
-
-/* ============== availability check (project-scope) ============== */
-let userEditedSlug = false;
-let pendingTimer = null;
-
-function queueAvailabilityCheck() {
-    const s = sanitizeSlug(slugEl.value);
-    setUrlPreview(s);
-    if (!s) {
-        setMsgHint("Enter a slug to check availability.");
-        setCreateEnabled(false);
-        setRandomizeEnabled(false);
-        return;
+async function checkSlug(){
+  const slug = sanitizeSlug(slugEl?.value);
+  if(!slug || !/^[a-z0-9-]{4,30}$/.test(slug)){
+    if(slugError){ slugError.style.display="block"; slugError.textContent="Please use 4–30 chars: a–z, 0–9, or -"; }
+    if(slugMsg){ slugMsg.className="field-msg err"; }
+    return;
+  }
+  if(slugError){ slugError.style.display="none"; }
+  if(slugMsg){ slugMsg.className="field-msg muted"; slugMsg.textContent="Checking…"; }
+  try{
+    const r = await fetch(ENDPOINTS.checkSlug,{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ slug }) });
+    const data = await r.json();
+    if(slugMsg){
+      if(data.status==="taken_project"){ slugMsg.className="field-msg err"; slugMsg.textContent="That slug is taken. Try Generate."; }
+      else if(data.status==="maybe_free"){ slugMsg.className="field-msg ok"; slugMsg.textContent="Looks good — slug is available ✓"; }
+      else { slugMsg.className="field-msg muted"; slugMsg.textContent="We’ll verify globally on create."; }
     }
-    setMsgHint("Checking availability…");
-    setCreateEnabled(false);
-    setRandomizeEnabled(false);
-
-    clearTimeout(pendingTimer);
-    pendingTimer = setTimeout(async () => {
-        try {
-            const r = await fetch("/checkSlug", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ slug: s }),
-            });
-            const data = await r.json();
-
-            if (data.status === "taken_project") {
-                // If created in THIS session → allow Randomize; otherwise block create.
-                if (lastCreatedSlug === s) {
-                    setMsgOk("Existing site (this session) — you can Randomize the template.");
-                    renderSuggestions([]);
-                    setCreateEnabled(false);
-                    setRandomizeEnabled(true);
-                } else {
-                    showError("That slug is already used in this project. Tap “Generate” or edit the slug.");
-                    renderSuggestions([`${s}-${randToken(4)}`, `get-${s}`, `${s}-hq`]);
-                    setCreateEnabled(false);
-                    setRandomizeEnabled(false);
-                }
-            } else if (data.status === "maybe_free") {
-                setMsgHint("No conflict in this project — we’ll verify globally on create.");
-                setCreateEnabled(true);
-                setRandomizeEnabled(false);
-            } else if (data.status === "invalid") {
-                showError("Slug format is invalid. Use 4–30 chars: a–z, 0–9, hyphen.");
-                setCreateEnabled(false);
-                setRandomizeEnabled(false);
-            } else {
-                setMsgHint("Couldn’t verify now — you can still try to create.");
-                setCreateEnabled(true);
-                setRandomizeEnabled(false);
-            }
-        } catch {
-            setMsgHint("Couldn’t verify now — you can still try to create.");
-            setCreateEnabled(true);
-            setRandomizeEnabled(false);
-        }
-    }, 300);
+  }catch{
+    if(slugMsg){ slugMsg.className="field-msg muted"; slugMsg.textContent="Couldn’t verify — you can still try."; }
+  }
 }
 
-/* ============== events ============== */
-nameEl.addEventListener("input", () => {
-    if (!userEditedSlug && !slugEl.value.trim()) {
-        slugEl.value = suggestSlug(nameEl.value, presetHidden.value || "professional");
-    }
-    queueAvailabilityCheck();
-});
-slugEl.addEventListener("input", () => {
-    userEditedSlug = true;
-    slugEl.value = sanitizeSlug(slugEl.value);
-    if (lastCreatedSlug && slugEl.value !== lastCreatedSlug) setRandomizeEnabled(false);
-    queueAvailabilityCheck();
-});
-genBtn.addEventListener("click", () => {
-    slugEl.value = suggestSlug(nameEl.value || "app", presetHidden.value || "professional");
-    userEditedSlug = false;
-    if (lastCreatedSlug && slugEl.value !== lastCreatedSlug) setRandomizeEnabled(false);
-    queueAvailabilityCheck();
-});
-presetPills.forEach((btn) => {
-    btn.addEventListener("click", () => {
-        presetPills.forEach((b) => b.setAttribute("aria-pressed", "false"));
-        btn.setAttribute("aria-pressed", "true");
-        presetHidden.value = btn.dataset.value || "professional";
-        if (!userEditedSlug || !slugEl.value.trim()) {
-            slugEl.value = suggestSlug(nameEl.value || "app", presetHidden.value);
-        }
-        queueAvailabilityCheck();
-    });
-});
-resetBtn.addEventListener("click", () => {
-    nameEl.value = "";
-    emailEl.value = "";
-    slugEl.value = "";
-    userEditedSlug = false;
-    setUrlPreview("");
-    setMsgHint("Policy URL → https://your-slug.web.app/PrivacyPolicies");
-    slugError.style.display = "none";
-    slugSug.innerHTML = "";
-    setCreateEnabled(false);
-    setRandomizeEnabled(false);
-    out.hidden = true;
-    out.innerHTML = "";
-    statusBar.classList.remove("show");
-    // session slug is kept until tab closes; typing it again will enable Randomize
-});
+nameEl?.addEventListener("input", ()=>{ if(!slugEl.value.trim()){ slugEl.value = suggestSlug(); updateUrlPreview(); checkSlug(); } });
+emailEl?.addEventListener("input", ()=>{});
+slugEl?.addEventListener("input", ()=>{ slugEl.value = sanitizeSlug(slugEl.value); updateUrlPreview(); });
+slugEl?.addEventListener("change", checkSlug);
+genSlug?.addEventListener("click", ()=>{ slugEl.value = suggestSlug(); updateUrlPreview(); checkSlug(); });
 
-/* ============== publish helpers ============== */
-async function doPublish(slug, productName, email) {
-    const r = await fetch("/createPolicySite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, productName, email, rotate: true }),
-    });
-    const ct = r.headers.get("content-type") || "";
-    let payload = undefined;
-    if (ct.includes("application/json")) { try { payload = await r.json(); } catch { } }
-    return { ok: r.ok, status: r.status, data: payload };
+tonePills.forEach(p=>p.addEventListener("click", ()=>{
+  tonePills.forEach(x=>x.setAttribute("aria-pressed","false"));
+  p.setAttribute("aria-pressed","true");
+  state.tone = p.dataset.value;
+}));
+
+function openModal(title){
+  aiModal?.classList.add("show");
+  if(aiTitle) aiTitle.textContent = title || "Preview";
+  if(aiPublishBtn) aiPublishBtn.disabled = true;
+  if(aiHint){ aiHint.textContent="Generating preview…"; aiHint.style.display="flex"; }
+  aiBody?.classList.add("busy");
+}
+function closeModal(){ aiModal?.classList.remove("show"); if(aiFrame) aiFrame.srcdoc=""; }
+aiCloseBtn?.addEventListener("click", closeModal);
+aiModal?.addEventListener("click", (e)=>{ if(e.target===aiModal) closeModal(); });
+
+async function previewTemplate(randomize=true){
+  const productName = nameEl?.value?.trim();
+  const email = emailEl?.value?.trim();
+  if(!productName || !email){ openModal("Template Preview"); if(aiHint){ aiHint.textContent="Fill Product & Email first."; } aiBody?.classList.remove("busy"); return; }
+  openModal("Template Preview");
+  try{
+    const r = await fetch(ENDPOINTS.previewTemplate,{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ productName, email, slug: sanitizeSlug(slugEl?.value || "preview"), rotate: !!randomize }) });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data?.message || `Preview failed (${r.status})`);
+    state.fast.html = data.html || ""; state.fast.templateName = data.templateName || "";
+    if(aiFrame) aiFrame.srcdoc = state.fast.html;
+    if(aiHint) aiHint.style.display="none";
+    if(aiPublishBtn) aiPublishBtn.disabled = false;
+  }catch(e){ if(aiHint){ aiHint.style.display="flex"; aiHint.textContent = `Preview error — ${e.message}`; } }
+  finally{ aiBody?.classList.remove("busy"); }
 }
 
-/* ============== create ============== */
-async function createPolicy() {
-    const productName = nameEl.value.trim();
-    const email = emailEl.value.trim();
-    const slug = sanitizeSlug(slugEl.value);
-    if (!productName || !email || !slug) { showError("Please fill product name, email, and a valid slug."); return; }
+btnPreviewTemplate?.addEventListener("click", ()=> previewTemplate(true));
+aiRefreshBtn?.addEventListener("click", ()=>{
+  if(aiTitle?.textContent?.includes("Template")) return previewTemplate(true);
+  return requestPreview(true);
+});
+aiPublishBtn?.addEventListener("click", async ()=>{
+  const slug = sanitizeSlug(slugEl?.value);
+  const productName = nameEl?.value?.trim();
+  const email = emailEl?.value?.trim();
+  if(!slug || !productName || !email) return;
 
-    setCreateEnabled(false);
-    setRandomizeEnabled(false);
-    statusBar.classList.add("show");
-    st1.classList.add("active");
-    st2.classList.remove("active");
-    out.hidden = true;
-    out.innerHTML = "";
-
-    try {
-        const { ok, status, data } = await doPublish(slug, productName, email);
-
-        if (!ok) {
-            const code = data?.code || "";
-            if (status === 409 || code === "slug_taken") {
-                showError("That slug is taken by another project. Try a different slug.");
-                renderSuggestions([`${slug}-${randToken(5)}`, `get-${slug}`, `${slug}-labs`]);
-            } else if (status === 429 || code === "quota_sites") {
-                showError("Your Firebase project hit the limit for Hosting sites. Delete unused sites or use another project.");
-            } else if (status === 403 || code === "permission_denied") {
-                showError("This Firebase project’s service account lacks permission to create Hosting sites.");
-            } else {
-                showError("Couldn’t create the site. Please try again.");
-            }
-            return;
-        }
-
-        // success
-        setSessionSlug(slug);
-        setRandomizeEnabled(true); // enable Randomize for this session/slug
-        st2.classList.add("active");
-        out.hidden = false;
-        out.innerHTML = `
-      <div class="ok"><strong>Done!</strong></div>
-      <div>Policy URL → <a href="${data.policyUrl}" target="_blank" rel="noopener">${data.policyUrl}</a></div>
-      <div style="margin-top:6px">Root domains → 
-        <a href="${data.webAppUrl}" target="_blank" rel="noopener">${data.webAppUrl}</a> · 
+  if(aiTitle?.textContent?.includes("Template")){
+    if(!state.fast.html) return;
+    aiPublishBtn.disabled = true; aiPublishBtn.classList.add("loading"); aiBody?.classList.add("busy"); if(aiHint){ aiHint.style.display="flex"; aiHint.textContent="Publishing…"; }
+    try{
+      const r = await fetch(ENDPOINTS.publishTemplate,{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ slug, html: state.fast.html }) });
+      const data = await r.json();
+      if(!r.ok) throw new Error(data?.message || `Publish failed (${r.status})`);
+      if(aiHint) aiHint.textContent = "Published! Your page is live.";
+      if(outFast){ outFast.hidden=false; outFast.innerHTML = `
+        <div class="ok">Published!</div>
+        Policy URL → <a href="${data.policyUrl}" target="_blank" rel="noopener">${data.policyUrl}</a><br>
+        Root → <a href="${data.webAppUrl}" target="_blank" rel="noopener">${data.webAppUrl}</a> ·
         <a href="${data.firebaseAppUrl}" target="_blank" rel="noopener">${data.firebaseAppUrl}</a>
-      </div>
-    `;
-    } catch {
-        showError("Network error — please try again.");
-    } finally {
-        statusBar.classList.remove("show");
-    }
-}
-createBtn.addEventListener("click", createPolicy);
-
-/* ============== randomize (session-limited) ============== */
-randBtn.addEventListener("click", async () => {
-    const slug = sanitizeSlug(slugEl.value);
-    if (!slug || slug !== lastCreatedSlug) return; // safety
-    const productName = nameEl.value.trim() || "App";
-    const email = emailEl.value.trim() || "support@example.com";
-
-    setRandomizeEnabled(false);
-    statusBar.classList.add("show");
-    st1.classList.add("active");
-    st2.classList.remove("active");
-
-    try {
-        const { ok, data } = await doPublish(slug, productName, email);
-        if (ok) {
-            st2.classList.add("active");
-            out.hidden = false;
-            out.innerHTML = `
-        <div class="ok"><strong>Re-published!</strong> A new template was applied.</div>
-        <div>Policy URL → <a href="${data.policyUrl}" target="_blank" rel="noopener">${data.policyUrl}</a></div>
-      `;
-        } else {
-            showError("Couldn’t randomize right now. Please try again.");
-        }
-    } catch {
-        showError("Network error — please try again.");
-    } finally {
-        // keep randomize enabled for the same session slug
-        setRandomizeEnabled(true);
-        statusBar.classList.remove("show");
-    }
+      `; }
+    }catch(e){ if(aiHint) aiHint.textContent = `Publish error — ${e.message}`; }
+    finally{ aiPublishBtn.classList.remove("loading"); aiPublishBtn.disabled=false; aiBody?.classList.remove("busy"); }
+  }
 });
 
-/* ============== init ============== */
-setUrlPreview("");
-setCreateEnabled(false);
-setRandomizeEnabled(false);
-setMsgHint("Policy URL → https://your-slug.web.app/PrivacyPolicies");
+btnCreateFast?.addEventListener("click", async ()=>{
+  const slug = sanitizeSlug(slugEl?.value);
+  const productName = nameEl?.value?.trim();
+  const email = emailEl?.value?.trim();
+  if(!productName || !email || !slug) return;
+
+  btnCreateFast.disabled = true;
+  if(statusFast){ statusFast.style.display="block"; statusFast.textContent="Creating site with a fresh template…"; }
+  try{
+    const r = await fetch(ENDPOINTS.create,{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ slug, productName, email, rotate:true }) });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data?.message || `Create failed (${r.status})`);
+    if(outFast){ outFast.hidden=false; outFast.innerHTML = `
+      <div class="ok">Done!</div>
+      Policy URL → <a href="${data.policyUrl}" target="_blank" rel="noopener">${data.policyUrl}</a><br>
+      Root → <a href="${data.webAppUrl}" target="_blank" rel="noopener">${data.webAppUrl}</a> ·
+      <a href="${data.firebaseAppUrl}" target="_blank" rel="noopener">${data.firebaseAppUrl}</a>
+    `; }
+  }catch(e){ if(outFast){ outFast.hidden=false; outFast.innerHTML = `<div class="err">Create failed: ${e.message}</div>`; } }
+  finally{ btnCreateFast.disabled=false; if(statusFast) statusFast.style.display="none"; }
+});
+
+function stylePacks(){ return [
+  { name:"Nebula Glow", palette:{bg:"#0b1020",fg:"#e9edf7",accent:"#7aa8ff",accent2:"#6ef3ff"}, fonts:{heading:"Outfit, Inter, system-ui", body:"Inter, system-ui"}, layout:"bold hero, glass cards, neon glows on buttons, pill chips", ornaments:"starfield/gradient background, soft inner shadows", spacing:"cozy"}, 
+  { name:"Minimal Cream", palette:{bg:"#f6f5f2",fg:"#121319",accent:"#4b6bfb",accent2:"#ff7a59"}, fonts:{heading:"Plus Jakarta Sans, Inter", body:"Inter, system-ui"}, layout:"left hero, crisp dividers, rounded cards", ornaments:"subtle noise texture", spacing:"airy"}, 
+  { name:"Retro Terminal", palette:{bg:"#0b0f0b",fg:"#d6ffe1",accent:"#22e584",accent2:"#7cf4ff"}, fonts:{heading:"IBM Plex Mono, ui-monospace", body:"Inter, system-ui"}, layout:"grid columns, code headings, borders", ornaments:"scanline gradient", spacing:"tight"}, 
+  { name:"Gradient Aurora", palette:{bg:"#0a0f2a",fg:"#eaf0ff",accent:"#a67cff",accent2:"#00d4ff"}, fonts:{heading:"Poppins, Inter", body:"Inter, system-ui"}, layout:"center hero with gradient blob; soft cards", ornaments:"aurora + subtle grid", spacing:"balanced"}, 
+  { name:"Paper Blue", palette:{bg:"#0f1322",fg:"#e6edff",accent:"#6aa7ff",accent2:"#66e0a3"}, fonts:{heading:"Sora, Inter", body:"Inter, system-ui"}, layout:"paper-card look, drop shadows, tidy bullets", ornaments:"paper grain", spacing:"balanced"} 
+];}
+function pickPack(){ const packs = stylePacks(); return packs[Math.floor(Math.random()*packs.length)]; }
+
+function openAi(){ openModal("AI Preview"); }
+async function requestPreview(forceNew){
+  const productName = nameEl?.value?.trim();
+  const email = emailEl?.value?.trim();
+  if(!productName || !email){ openAi(); if(aiHint){ aiHint.textContent="Fill Product & Email first."; } aiBody?.classList.remove("busy"); return; }
+  if(forceNew || !state.aiVariation) state.aiVariation = Math.random().toString(36).slice(2,10);
+  state.stylePack = pickPack();
+
+  openAi();
+  if(aiRefreshBtn) aiRefreshBtn.classList.add("loading");
+  try{
+    const payload = { productName, email, aiPrompt: aiPrompt?.value || "", tone: state.tone, variation: state.aiVariation, stylePack: state.stylePack };
+    const r = await fetch(ENDPOINTS.previewAI,{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data?.message || `Preview failed (${r.status})`);
+    state.aiHtml = data.html || "";
+    if(aiFrame) aiFrame.srcdoc = state.aiHtml;
+    if(aiHint) aiHint.style.display="none";
+    if(aiPublishBtn) aiPublishBtn.disabled=false;
+  }catch(e){ if(aiHint){ aiHint.style.display="flex"; aiHint.textContent=`Preview error — ${e.message}`; } }
+  finally{ aiBody?.classList.remove("busy"); aiRefreshBtn?.classList.remove("loading"); }
+}
+
+btnPreviewAI?.addEventListener("click", ()=> requestPreview(true));
+aiRefreshBtn?.addEventListener("click", ()=>{ if(!(aiTitle?.textContent||"").includes("Template")) requestPreview(true); });
+aiPublishBtn?.addEventListener("click", async ()=>{
+  if((aiTitle?.textContent||"").includes("Template")) return;
+  const slug = sanitizeSlug(slugEl?.value);
+  const productName = nameEl?.value?.trim();
+  const email = emailEl?.value?.trim();
+  if(!slug || !productName || !email || !state.aiHtml) return;
+  aiPublishBtn.disabled = true; aiPublishBtn.classList.add("loading"); aiBody?.classList.add("busy"); if(aiHint){ aiHint.style.display="flex"; aiHint.textContent="Publishing…"; }
+  try{
+    const r = await fetch(ENDPOINTS.publishAI,{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ slug, html: state.aiHtml }) });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data?.message || `Publish failed (${r.status})`);
+    if(outCustom){ outCustom.hidden=false; outCustom.innerHTML = `
+      <div class="ok">Published!</div>
+      Policy URL → <a href="${data.policyUrl}" target="_blank" rel="noopener">${data.policyUrl}</a><br>
+      Root → <a href="${data.webAppUrl}" target="_blank" rel="noopener">${data.webAppUrl}</a> ·
+      <a href="${data.firebaseAppUrl}" target="_blank" rel="noopener">${data.firebaseAppUrl}</a>
+    `; }
+    if(aiHint) aiHint.textContent = "Published! Your AI page is live.";
+  }catch(e){ if(aiHint) aiHint.textContent = `Publish error — ${e.message}`; }
+  finally{ aiPublishBtn.classList.remove("loading"); aiPublishBtn.disabled=false; aiBody?.classList.remove("busy"); }
+});
+
+(function init(){ updateUrlPreview(); if(slugEl?.value) checkSlug(); })();
