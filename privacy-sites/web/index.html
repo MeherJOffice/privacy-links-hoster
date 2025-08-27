@@ -4,17 +4,58 @@
     <meta charset="utf-8" />
     <title>Privacy Links Hoster</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Favicons (make sure these files exist in /web) -->
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#0b1020">
+
+    <!-- Social preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Privacy Links Hoster">
+    <meta property="og:title" content="Privacy Links Hoster">
+    <meta property="og:description" content="Generate & host privacy policy pages with unique, shareable links.">
+    <meta property="og:url" content="https://privacy-links-hoster.web.app/">
+    <meta property="og:image" content="https://privacy-links-hoster.web.app/og-image.png?v=1">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Privacy Links Hoster shield logo">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Privacy Links Hoster">
+    <meta name="twitter:description" content="Generate & host privacy policy pages with unique, shareable links.">
+    <meta name="twitter:image" content="https://privacy-links-hoster.web.app/og-image.png?v=1">
+
+    <!-- Preload header logo -->
+    <link rel="preload" as="image" href="/logo-shield.png">
+
+    <!-- Inline styles (your original styles, unchanged) -->
     <style>
         :root {
             --bg: #0b1020;
             --panel: #0f1731;
+            --card: #0c1330;
             --text: #e9edf7;
             --muted: #a9b7da;
             --accent: #6aa7ff;
             --border: #1d2a4d;
             --ok: #35c26b;
             --err: #ff667a;
-            --warn: #ffb84d
+            --warn: #ffb84d;
+            --link: #b7e1ff;
+            --link-hover: #d4ecff;
+            --brand-icon: 24px;
+            --brand-gap: 8px
+        }
+
+        @media (max-width:720px) {
+            :root {
+                --brand-icon: 22px;
+                --brand-gap: 8px
+            }
         }
 
         * {
@@ -25,28 +66,51 @@
             margin: 0;
             background: linear-gradient(180deg,#0a0f22,#0b1020);
             color: var(--text);
-            font: 15px/1.6 system-ui,Segoe UI,Roboto
+            font: 15px/1.6 system-ui,Segoe UI,Roboto,-apple-system,BlinkMacSystemFont
         }
+
+        a {
+            color: var(--link);
+            text-decoration: underline;
+            text-underline-offset: 2px
+        }
+
+            a:hover, a:focus {
+                color: var(--link-hover);
+                text-decoration-thickness: 2px
+            }
 
         .wrap {
             max-width: 960px;
-            margin: 40px auto;
-            padding: 0 20px
+            margin: 32px auto;
+            padding: 0 16px
         }
 
-        .hero {
-            padding: 24px 20px 8px
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--brand-gap);
+            margin-bottom: 8px
         }
 
-        .h1 {
-            font-size: 26px;
-            font-weight: 800;
+        .brand-logo img {
+            width: var(--brand-icon);
+            height: var(--brand-icon);
+            border-radius: 8px;
+            display: block;
+            transform: translateY(1px)
+        }
+
+        .brand h1 {
+            font-size: 22px;
+            line-height: 1;
             margin: 0
         }
 
-        .sub {
+        .brand .sub {
             color: var(--muted);
-            margin: 6px 0 0
+            margin: 2px 0 0;
+            font-size: 14px
         }
 
         .card {
@@ -63,6 +127,12 @@
             gap: 16px
         }
 
+        .grid-single {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px
+        }
+
         label {
             display: block;
             margin: 12px 0 6px;
@@ -74,32 +144,13 @@
             padding: 12px 14px;
             border-radius: 12px;
             border: 1px solid var(--border);
-            background: #0c1330;
+            background: var(--card);
             color: var(--text)
         }
 
             input:focus {
                 outline: 2px solid var(--accent)
             }
-
-        .row {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            margin-top: 10px
-        }
-
-        .toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px
-        }
-
-        .hint {
-            font-size: 12px;
-            color: var(--muted);
-            margin-top: 6px
-        }
 
         .actions {
             display: flex;
@@ -124,34 +175,15 @@
                 cursor: not-allowed
             }
 
-        .out {
-            margin-top: 16px;
-            padding: 12px;
-            border: 1px dashed var(--border);
-            border-radius: 12px;
-            background: #0f1836
-        }
-
-        .ok {
-            color: var(--ok)
-        }
-
-        .err {
-            color: var(--err)
-        }
-
-        .warn {
-            color: var(--warn)
-        }
-
-        .url {
-            font-family: ui-monospace,Menlo,Consolas,monospace
+        .ghost {
+            background: transparent;
+            border: 1px solid var(--border)
         }
 
         .status {
             display: none;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             margin-top: 14px;
             padding: 10px 12px;
             border: 1px solid var(--border);
@@ -178,6 +210,12 @@
             }
         }
 
+        .steps {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap
+        }
+
         .step {
             display: flex;
             align-items: center;
@@ -191,65 +229,180 @@
             height: 8px;
             border-radius: 50%;
             background: var(--muted);
-            opacity: .5
+            opacity: .45
         }
 
         .step.active .dot {
-            opacity: 1
+            opacity: 1;
+            background: var(--accent)
         }
+
+        .out {
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            background: #0f1836
+        }
+
+            .out a {
+                color: var(--link)
+            }
+
+        .ok {
+            color: var(--ok)
+        }
+
+        .url {
+            font-family: ui-monospace,Menlo,Consolas,monospace
+        }
+
+        .slug-row {
+            display: grid;
+            grid-template-columns: 1fr 140px;
+            gap: 8px;
+            align-items: center
+        }
+
+        .preset-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px
+        }
+
+        .pill {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            width: auto
+        }
+
+            .pill[aria-pressed="true"] {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #0b1020;
+                font-weight: 700
+            }
+
+        .field-msg {
+            margin-top: 6px;
+            font-size: 13px
+        }
+
+        .field-error {
+            color: var(--err)
+        }
+
+        .field-ok {
+            color: var(--ok)
+        }
+
+        .field-hint {
+            color: var(--muted)
+        }
+
+        @media (max-width:720px) {
+            .grid {
+                grid-template-columns: 1fr
+            }
+
+            .slug-row {
+                grid-template-columns: 1fr
+            }
+
+            .actions {
+                flex-direction: column
+            }
+
+                .actions > * {
+                    width: 100%
+                }
+        }
+
+        .foot {
+            margin: 24px auto 12px;
+            max-width: 960px;
+            padding: 0 16px;
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center
+        }
+
+            .foot a {
+                color: var(--link)
+            }
     </style>
-    <script type="module" defer src="/main.js?v=6"></script>
+
+    <!-- Bump the version to avoid cache -->
+    <script src="/main.js?v=23" defer></script>
 </head>
 <body>
     <div class="wrap">
-        <section class="hero">
-            <h1 class="h1">Privacy Links Hoster</h1>
-            <p class="sub">Create a unique <span class="url">https://&lt;slug&gt;.web.app/PrivacyPolicies</span> page for your app. Pick a random template each time.</p>
-        </section>
+        <header class="brand">
+            <div class="brand-logo"><img src="/logo-shield.png" alt="Privacy Links Hoster logo" width="256" height="256"></div>
+            <div>
+                <h1>Privacy Links Hoster</h1>
+                <p class="sub">Generate & host privacy policy pages with unique, shareable links</p>
+            </div>
+        </header>
 
         <div class="card">
             <div class="grid">
                 <div>
-                    <label for="slug">Site Slug (unique)</label>
-                    <input id="slug" placeholder="e.g. tiny-rummor" />
-                    <div class="hint">Policy URL → <span class="url" id="urlPreview">https://…</span></div>
+                    <label for="name">Product / App Name</label>
+                    <input id="name" type="text" placeholder="e.g. Tiny Rummor" autocomplete="off" />
                 </div>
                 <div>
-                    <label for="name">Product / App Name</label>
-                    <input id="name" placeholder="e.g. Tiny Rummor" />
+                    <label for="email">Contact Email</label>
+                    <input id="email" type="email" placeholder="support@studio.com" autocomplete="email" />
                 </div>
             </div>
 
-            <div class="grid" style="margin-top:8px">
+            <div class="grid-single" style="margin-top:8px">
                 <div>
-                    <label for="email">Contact Email</label>
-                    <input id="email" placeholder="support@studio.com" />
-                    <div class="hint">Used to fill placeholders in the template.</div>
-                </div>
-                <div class="row">
-                    <div class="toggle">
-                        <input type="checkbox" id="rotate" checked />
-                        <label for="rotate">Use a new random template (even with the same slug)</label>
+                    <label for="slug">Site Slug</label>
+                    <div class="slug-row">
+                        <input id="slug" type="text" spellcheck="false" autocomplete="off" placeholder="auto-generated from Product Name" />
+                        <button id="genSlug" type="button" class="ghost">Generate</button>
                     </div>
+
+                    <div class="preset-pills" role="group" aria-label="Slug style">
+                        <button class="pill" data-value="professional" aria-pressed="true">Professional</button>
+                        <button class="pill" data-value="playful" aria-pressed="false">Playful</button>
+                        <button class="pill" data-value="techy" aria-pressed="false">Techy</button>
+                        <input type="hidden" id="preset" value="professional">
+                    </div>
+
+                    <div id="slugMsg" class="field-msg field-hint">Policy URL → <span class="url" id="urlPreview">https://…</span></div>
+                    <div id="slugError" class="field-msg field-error" style="display:none"></div>
                 </div>
             </div>
 
             <div class="actions">
-                <button id="createBtn" class="btn">Create Policy Link</button>
-                <button id="resetBtn">Reset</button>
+                <button id="createBtn" class="btn" type="button">Create Policy Link</button>
+                <!-- NEW: session-limited randomizer -->
+                <button id="randBtn" class="btn" type="button" disabled title="Re-publish with a new random template (this session only)">Randomize Template</button>
+                <button id="resetBtn" type="button" class="ghost">Reset</button>
             </div>
 
             <div id="status" class="status" aria-live="polite">
                 <div class="spinner" aria-hidden="true"></div>
-                <div>
-                    <div class="step active" id="st1"><span class="dot"></span> Creating site…</div>
-                    <div class="step" id="st2"><span class="dot"></span> Selecting template…</div>
-                    <div class="step" id="st3"><span class="dot"></span> Uploading & releasing…</div>
+                <div class="steps">
+                    <div class="step" id="st1"><span class="dot"></span>Creating site…</div>
+                    <div class="step" id="st2"><span class="dot"></span>Publishing policy…</div>
                 </div>
             </div>
 
             <div id="out" class="out" hidden></div>
         </div>
     </div>
+
+    <footer class="foot">
+        Created by <strong>Meher Davanci</strong> © 2025 — <a href="https://www.davanciink.com" target="_blank" rel="noopener">www.davanciink.com</a>
+    </footer>
 </body>
 </html>

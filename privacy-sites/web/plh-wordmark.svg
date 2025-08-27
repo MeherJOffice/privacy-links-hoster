@@ -1,0 +1,25 @@
+<!-- plh-wordmark.svg — shield with PLH + wordmark -->
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="220" viewBox="0 0 880 220" role="img" aria-labelledby="t">
+  <title id="t">Privacy Links Hoster</title>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6aa7ff"></stop>
+      <stop offset="100%" stop-color="#3d5ec9"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon -->
+  <g transform="translate(16,16)">
+    <rect x="0" y="0" width="128" height="128" rx="28" fill="url(#g)"></rect>
+    <path fill="#e9edf7" d="M64 22c-14 7-32 12-32 12v24c0 26 20 41 32 48 12-7 32-22 32-48V34s-18-5-32-12z"></path>
+    <text x="64" y="72" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial" font-weight="800" font-size="32" fill="#0f1731" letter-spacing=".9">PLH</text>
+  </g>
+
+  <!-- Wordmark text -->
+  <g transform="translate(168,58)">
+    <text x="0" y="44" fill="#e9edf7" font-size="48" font-weight="800" font-family="Inter, ui-sans-serif, system-ui, Segoe UI, Roboto">Privacy Links Hoster</text>
+    <text x="0" y="84" fill="#a9b7da" font-size="22" font-weight="500" font-family="Inter, ui-sans-serif, system-ui, Segoe UI, Roboto">
+      Generate &amp; host privacy policy pages with unique, shareable links
+    </text>
+  </g>
+</svg>
