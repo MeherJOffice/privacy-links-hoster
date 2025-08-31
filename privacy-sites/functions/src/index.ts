@@ -1,3 +1,4 @@
+
 import crypto from "node:crypto";
 import zlib from "node:zlib";
 import { GoogleAuth } from "google-auth-library";
@@ -91,6 +92,7 @@ async function publishToHosting(siteId: string, html: string) {
   const parent = `projects/${PROJECT_ID}`;
   const siteName = `sites/${siteId}`;
 
+  // create or ignore if exists
   const c = await fetch(`${HOSTING_API}/${parent}/sites?siteId=${encodeURIComponent(siteId)}`, { method: "POST", headers: authHeaders(token as string), body: JSON.stringify({}) });
   if (!c.ok) {
     const body = (await c.text()).toLowerCase();
@@ -121,7 +123,79 @@ async function publishToHosting(siteId: string, html: string) {
   await fetchJSON(`${HOSTING_API}/sites/${siteId}/releases?versionName=${encodeURIComponent(versionName)}`, { method: "POST", headers: authHeaders(token as string) });
 }
 
-// Endpoints (ensure Promise<void> by not returning Response objects)
+/* ---------- AI generator that uses questionnaire answers ---------- */
+function answersToPrompt(answers: any): string {
+  if (!answers) return "";
+  try {
+    const parts: string[] = [];
+    if (answers.industry) parts.push(`Industry: ${answers.industry}`);
+    if (answers.dataTypes?.length) parts.push(`Data types collected: ${answers.dataTypes.join(", ")}`);
+    if (answers.compliance?.length) parts.push(`Compliance frameworks: ${answers.compliance.join(", ")}`);
+    if (answers.analytics?.length) parts.push(`Analytics/Monetization: ${answers.analytics.join(", ")}`);
+    if (answers.retention) parts.push(`Data retention: ${answers.retention}`);
+    if (answers.ageGroup) parts.push(`Target audience: ${answers.ageGroup}`);
+    if (answers.additional) parts.push(`Additional notes: ${answers.additional}`);
+    if (answers.design) {
+      const d = answers.design;
+      parts.push(`Design intent → tone: ${d.tone || "professional"}, accent: ${d.accent || "#6aa7ff"}, theme: ${d.theme || "neutral"},
+background: ${d.bgEffect || "none"}, layout: ${d.layout || "clean"}, typefaces: ${d.headingFont || "Inter"} / ${d.bodyFont || "system-ui"}`);
+    }
+    return parts.join("\n");
+  } catch { return ""; }
+}
+
+async function generateAiPolicyHtmlPreview(productName: string, email: string, customPrompt = "", tone = "professional", variation?: string, answers?: any, stylePack?: any) {
+  const apiKey = GEMINI_API_KEY.value();
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
+
+  const userFromAnswers = answersToPrompt(answers);
+  const styleSeed = JSON.stringify(stylePack || {}, null, 2);
+  const styleLine = tone === "playful" ? "friendly and colorful" : tone === "techy" ? "sleek and developer-facing" : "clean and formal";
+  const userBlock = [customPrompt?.trim() ? `USER STYLE NOTES:\n${customPrompt.trim()}` : "", userFromAnswers ? `QUESTIONNAIRE:\n${userFromAnswers}` : ""].filter(Boolean).join("\n\n");
+
+  const sys = `
+ROLE: You are a senior UX writer & designer. Produce a single-file PRIVACY POLICY page ONLY.
+
+STRICT VISUAL RULES:
+- Use ONLY inline CSS + semantic HTML. NO external fonts, images, or scripts.
+- Use and honor this STYLE PACK (as inspiration): 
+${styleSeed}
+
+STRICT CONTENT RULES:
+- App name: ${productName}
+- Contact email: ${email}
+- If compliance mentions GDPR/CCPA/COPPA, include professional sections and disclaimers accordingly.
+
+OUTPUT LAYOUT:
+- Sticky header with app name and "Contact" anchor link.
+- Sections: Intro (with today's date), Information We Collect, How We Use, Third Parties, Legal Bases (GDPR if relevant), Retention & Deletion, Security, Children's Privacy, Your Rights/Choices, Changes, Contact.
+- Style: ${styleLine}. Use tasteful CSS-only micro-interactions (link hovers, separators). 
+
+${userBlock ? userBlock + "\n" : ""}
+RANDOMNESS SEED: ${variation || "none"}
+
+OUTPUT:
+- Return ONLY a complete HTML document (<!doctype html> … </html>).
+`.trim();
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    generationConfig: { temperature: 1.35, topP: 0.95, topK: 64, maxOutputTokens: 5500 }
+  });
+
+  const resp = await model.generateContent(sys);
+  let html = (resp.response.text() || "").trim();
+  html = html.replace(/```html|```/gi, "").trim();
+  if (!/<!doctype|<html/i.test(html)) {
+    html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy Policy — ${productName}</title>` + html;
+  }
+  // ensure placeholders filled
+  html = fillPlaceholders(html, productName, email);
+  return html;
+}
+
+/* ---------- HTTP handlers ---------- */
 export const checkSlug = onRequest({ invoker: "public", cors: true }, async (req, res): Promise<void> => {
   try {
     if (req.method !== "POST") { res.status(405).send("Use POST"); return; }
@@ -189,52 +263,6 @@ export const publishTemplate = onRequest({ invoker: "public", cors: true }, asyn
     console.error(e); res.status(500).json({ message: e?.message || "Publish failed" }); return;
   }
 });
-
-async function generateAiPolicyHtmlPreview(productName: string, email: string, customPrompt = "", tone = "professional", variation?: string, _answers?: any, stylePack?: any) {
-  const apiKey = GEMINI_API_KEY.value();
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
-
-  const styleSeed = JSON.stringify(stylePack || {}, null, 2);
-  const styleLine = tone === "playful" ? "friendly and colorful" : tone === "techy" ? "sleek and developer-facing" : "clean and formal";
-  const userBlock = customPrompt?.trim() ? `USER STYLE NOTES:\n${customPrompt.trim()}\n` : "";
-
-  const sys = `
-ROLE: You are a senior UX writer & designer. Produce a single-file PRIVACY POLICY page.
-
-STRICT VISUAL RULES:
-- Use ONLY inline CSS + semantic HTML. NO external fonts, images, or scripts.
-- Use and honor this STYLE PACK (as inspiration): 
-${styleSeed}
-
-STRICT CONTENT RULES:
-- App name: ${productName}
-- Contact email: ${email}
-
-OUTPUT LAYOUT:
-- Sticky header with app name and "Contact" anchor link.
-- Sections: Intro (with today's date), Information We Collect, How We Use, Third Parties, Legal Bases (GDPR if relevant), Retention & Deletion, Security, Children's Privacy, Your Rights/Choices, Changes, Contact.
-- Style: ${styleLine}. Use tasteful CSS-only micro-interactions (link hovers, separators). 
-${userBlock}
-
-OUTPUT:
-- Return ONLY a complete HTML document (<!doctype html> … </html>).
-`.trim();
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    generationConfig: { temperature: 1.25, topP: 0.95, topK: 64, maxOutputTokens: 5500 }
-  });
-
-  const resp = await model.generateContent(sys);
-  let html = (resp.response.text() || "").trim();
-  html = html.replace(/```html|```/gi, "").trim();
-  if (!/<!doctype|<html/i.test(html)) {
-    html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy Policy — ${productName}</title>` + html;
-  }
-  html = fillPlaceholders(html, productName, email);
-  return html;
-}
 
 export const previewPolicyHtml = onRequest({ invoker: "public", cors: true, secrets: [GEMINI_API_KEY] }, async (req, res): Promise<void> => {
   try {

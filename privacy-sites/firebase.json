@@ -47,20 +47,6 @@
         }
       },
       {
-        "source": "/previewPolicyHtml",
-        "function": {
-          "functionId": "previewPolicyHtml",
-          "region": "us-central1"
-        }
-      },
-      {
-        "source": "/publishAiPolicy",
-        "function": {
-          "functionId": "publishAiPolicy",
-          "region": "us-central1"
-        }
-      },
-      {
         "source": "/previewTemplate",
         "function": {
           "functionId": "previewTemplate",
@@ -71,6 +57,20 @@
         "source": "/publishTemplate",
         "function": {
           "functionId": "publishTemplate",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/previewPolicyHtml",
+        "function": {
+          "functionId": "previewPolicyHtml",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/publishAiPolicy",
+        "function": {
+          "functionId": "publishAiPolicy",
           "region": "us-central1"
         }
       },

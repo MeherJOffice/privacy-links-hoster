@@ -1,137 +1,270 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Privacy Links Hoster</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <meta name="theme-color" content="#0b1020">
+  <title>Privacy Links Hoster</title>
+  <link rel="icon" href="/favicon.ico">
   <style>
-    :root{--bg:#0b1020;--panel:#0f1731;--card:#0c1330;--text:#e9edf7;--muted:#a9b7da;--accent:#6aa7ff;--border:#1d2a4d;--ok:#35c26b;--err:#ff667a;--link:#b7e1ff;--link-h:#d4ecff}
-    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0a0f22,#0b1020);color:var(--text);font:15px/1.6 system-ui,Segoe UI,Roboto,-apple-system}
-    a{color:var(--link)} a:hover{color:var(--link-h)}
-    .wrap{max-width:960px;margin:26px auto;padding:0 16px}
-    header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-    header img{width:24px;height:24px;border-radius:8px}
-    header h1{margin:0;font-size:22px}
-    header .sub{color:var(--muted);margin:2px 0 0;font-size:13px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .grid1{display:grid;grid-template-columns:1fr;gap:10px}
-    label{display:block;margin:8px 0 6px;color:var(--muted)}
-    input,textarea,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text)}
-    input:focus,textarea:focus{outline:2px solid var(--accent)}
-    .slug-row{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center}
-    .pillbar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 0}
-    .pill{padding:9px 12px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;width:auto}
-    .pill[aria-pressed="true"]{background:var(--accent);color:#0b1020;border-color:var(--accent);font-weight:700}
+    :root{
+      --bg:#0b1020; --panel:#0f1731; --card:#0c1330; --text:#e9edf7;
+      --muted:#a9b7da; --accent:#6aa7ff; --border:#1d2a4d;
+      --ok:#35c26b; --err:#ff667a; --warn:#ffb84d;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font:15px/1.6 system-ui,Segoe UI,Roboto,-apple-system;
+         color:var(--text);background:linear-gradient(180deg,#0a0f22,#0b1020)}
+    .wrap{max-width:980px;margin:28px auto;padding:0 16px}
+    h1{font-size:22px;margin:0 0 8px}
+    .sub{color:var(--muted);margin:0 0 18px}
+    .card{background:var(--panel);border:1px solid var(--border);
+          border-radius:16px;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.35);margin-bottom:12px}
+    label{display:block;margin:12px 0 6px;color:var(--muted)}
+    input,select,textarea,button{width:100%;padding:12px 14px;border-radius:12px;
+       border:1px solid var(--border);background:var(--card);color:var(--text)}
+    textarea{min-height:120px;resize:vertical}
+    input:focus,select:focus,textarea:focus{outline:2px solid var(--accent)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row-1{display:grid;grid-template-columns:1fr;gap:12px}
     .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-    .btn{cursor:pointer;background:var(--accent);border:0;font-weight:700;border-radius:12px}
-    .ghost{background:transparent;border:1px solid var(--border)}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-    .field-msg{font-size:13px;margin-top:6px}.ok{color:var(--ok)}.err{color:var(--err)}.muted{color:var(--muted)}
-    .out{margin-top:14px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#0f1836}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999;padding:18px}
+    .btn{cursor:pointer;background:var(--accent);border:0;font-weight:700;transition:transform .06s}
+    .btn:active{transform:scale(.99)}
+    .ghost{background:transparent;border-color:var(--border)}
+    .muted{color:var(--muted)}
+    .ok{color:var(--ok)} .err{color:var(--err)} .warn{color:var(--warn)}
+    .pillbar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+    .pill{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;width:auto}
+    .pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#0b1020;font-weight:700}
+    .hidden{display:none!important}
+
+    .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .mode-card{display:flex;flex-direction:column;gap:6px;padding:18px;border-radius:12px;border:1px dashed var(--border);background:#0f1836;cursor:pointer}
+    .mode-card:hover{border-color:var(--accent)}
+    .mode-title{font-weight:800}
+    /* Modal preview */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.52);display:none;align-items:center;justify-content:center;padding:24px}
     .modal.show{display:flex}
-    .modal-card{background:#0f1731;border:1px solid var(--border);border-radius:14px;max-width:1100px;width:100%;height:min(90vh,900px);display:flex;flex-direction:column;box-shadow:0 30px 100px rgba(0,0,0,.6)}
-    .modal-bar{display:flex;align-items:center;gap:8px;padding:10px;border-bottom:1px solid var(--border);background:#0e1630}
-    .modal-title{font-weight:700}
-    .modal-body{flex:1;background:#0a0f20;position:relative}
-    .modal-body iframe{border:0;width:100%;height:100%;background:#fff;border-bottom-left-radius:14px;border-bottom-right-radius:14px;transition:filter .18s ease,opacity .18s ease}
-    .modal-body.busy iframe{filter:blur(1px);opacity:.25;pointer-events:none}
-    .modal-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#99b6ff;pointer-events:none}
-    .icon-btn{width:auto;padding:8px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:6px}
-    .icon-btn svg{width:16px;height:16px}
-    @keyframes spin{to{transform:rotate(360deg)}} .loading svg{animation:spin 1s linear infinite}
-    @media (max-width:720px){.grid{grid-template-columns:1fr}.actions>*{flex:1}}
+    .panel{background:#0b0f24;border:1px solid var(--border);border-radius:16px;max-width:980px;width:100%;height:86vh;display:flex;flex-direction:column}
+    .panel-head{display:flex;gap:10px;align-items:center;padding:10px;border-bottom:1px solid var(--border)}
+    .panel-head .grow{flex:1}
+    .panel-body{flex:1;background:#fff;border-bottom-left-radius:16px;border-bottom-right-radius:16px}
+    .panel-actions button{width:auto}
+    @media (max-width:720px){ .row{grid-template-columns:1fr} .mode-grid{grid-template-columns:1fr} .actions>*{flex:1} }
+    .foot{color:var(--muted);font-size:13px;text-align:center;margin:24px 0}
   </style>
-  <script type="module" defer src="/main.js?v=200"></script>
+  <script type="module" src="/main.js?v=241"></script>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <img src="/logo-shield.png" alt="logo">
-      <div>
-        <h1>Privacy Links Hoster</h1>
-        <p class="sub">Generate & host privacy policy pages with unique, shareable links</p>
-      </div>
-    </header>
+    <h1>Privacy Links Hoster</h1>
+    <p class="sub">Generate & host privacy policy pages with unique, shareable links</p>
 
-    <div class="card">
-      <div class="grid">
+    <!-- STEP 1: App Gate -->
+    <section id="appGate" class="card">
+      <div class="row">
+        <div>
+          <label for="gName">Product / App Name</label>
+          <input id="gName" placeholder="e.g. Tiny Rummor" autocomplete="off">
+        </div>
+        <div>
+          <label for="gEmail">Contact Email</label>
+          <input id="gEmail" type="email" placeholder="support@studio.com" autocomplete="email">
+        </div>
+      </div>
+      <label for="gSlug">Site Slug</label>
+      <div class="row">
+        <input id="gSlug" placeholder="auto-generated from Product Name">
+        <button id="gGen" class="ghost" type="button">Generate</button>
+      </div>
+      <div id="gSlugMsg" class="muted">Policy URL → <span id="gUrlPreview" class="muted">https://…</span></div>
+      <div class="actions">
+        <button id="toMode" class="btn">Next</button>
+      </div>
+    </section>
+
+    <!-- STEP 2: Mode Gate -->
+    <section id="modeGate" class="card hidden">
+      <label>Choose how you want to host:</label>
+      <div class="mode-grid">
+        <div id="chooseFast" class="mode-card">
+          <div class="mode-title">Fast hosting (use a template)</div>
+          <div class="muted">Pick a style preset and publish in one click. You can preview a random template first.</div>
+        </div>
+        <div id="chooseAi" class="mode-card">
+          <div class="mode-title">Custom hosting (AI + questionnaire)</div>
+          <div class="muted">Answer a few questions, generate a fully-styled policy with AI, then publish.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAST HOSTING -->
+    <section id="fastPanel" class="card hidden">
+      <div class="row">
         <div>
           <label for="name">Product / App Name</label>
-          <input id="name" type="text" placeholder="e.g. Tiny Rummor">
+          <input id="name" autocomplete="off">
         </div>
         <div>
           <label for="email">Contact Email</label>
-          <input id="email" type="email" placeholder="support@studio.com">
+          <input id="email" type="email">
         </div>
       </div>
+      <label for="slug">Site Slug</label>
+      <div class="row">
+        <input id="slug">
+        <button id="genSlug" type="button" class="ghost">Generate</button>
+      </div>
+      <div id="slugMsg" class="muted">Policy URL → <span id="urlPreview" class="muted">https://…</span></div>
+      <div id="slugError" class="err hidden"></div>
 
-      <div class="grid1">
-        <div>
-          <label for="slug">Site Slug</label>
-          <div class="slug-row">
-            <input id="slug" type="text" placeholder="auto-generated from Product Name">
-            <button id="genSlug" class="ghost">Generate</button>
-          </div>
-          <div class="pillbar" role="group" aria-label="Tone">
-            <button class="pill" data-value="professional" aria-pressed="true">Professional</button>
-            <button class="pill" data-value="playful">Playful</button>
-            <button class="pill" data-value="techy">Techy</button>
-          </div>
-          <div id="slugMsg" class="field-msg muted">Policy URL → <span id="urlPreview">https://…</span></div>
-          <div id="slugError" class="field-msg err" style="display:none"></div>
-        </div>
+      <label>Style preset</label>
+      <div id="presetBar" class="pillbar" role="group" aria-label="Preset">
+        <button class="pill" data-value="professional" aria-pressed="true">Professional</button>
+        <button class="pill" data-value="playful" aria-pressed="false">Playful</button>
+        <button class="pill" data-value="techy" aria-pressed="false">Techy</button>
       </div>
 
       <div class="actions">
-        <button id="btnPreviewTemplate" class="ghost">Preview template</button>
-        <button id="btnCreateFast" class="btn">Create with Template</button>
-        <span style="flex:1"></span>
-        <button id="btnPreviewAI" class="ghost">Preview AI HTML</button>
+        <button id="previewTpl" class="ghost">Preview template</button>
+        <button id="createBtn" class="btn">Create Policy Link</button>
+        <button id="resetBtn" class="ghost">Reset</button>
+      </div>
+      <div id="out" class="muted"></div>
+    </section>
+
+    <!-- AI HOSTING -->
+    <section id="aiPanel" class="card hidden">
+      <div class="steps">
+        <div class="step" data-step="1">1. App</div>
+        <div class="step" data-step="2">2. Policy details</div>
+        <div class="step" data-step="3">3. Design</div>
+        <div class="step" data-step="4">4. Review</div>
       </div>
 
-      <div id="statusFast" class="field-msg muted" style="display:none"></div>
-      <div id="outFast" class="out" hidden></div>
+      <div id="s1" class="row">
+        <div>
+          <label for="aiName">Product / App Name</label>
+          <input id="aiName">
+        </div>
+        <div>
+          <label for="aiEmail">Contact Email</label>
+          <input id="aiEmail" type="email">
+        </div>
+        <div>
+          <label for="aiSlug">Site Slug</label>
+          <input id="aiSlug">
+          <div id="aiSlugMsg" class="muted"></div>
+        </div>
+      </div>
 
-      <label for="aiPrompt" style="margin-top:12px">Optional AI style/copy prompt</label>
-      <textarea id="aiPrompt" placeholder="e.g. Aurora gradient, glass cards, friendly tone, short sections."></textarea>
-      <div id="statusCustom" class="field-msg muted" style="display:none"></div>
-      <div id="outCustom" class="out" hidden></div>
+      <div id="s2" class="row-1 hidden">
+        <div>
+          <label>Compliance</label>
+          <div id="qCompliance" class="pillbar" data-multi="true">
+            <button class="pill" data-value="GDPR">GDPR</button>
+            <button class="pill" data-value="CCPA">CCPA</button>
+            <button class="pill" data-value="COPPA">COPPA</button>
+          </div>
+        </div>
+        <div>
+          <label>Data types collected</label>
+          <div id="qDataTypes" class="pillbar" data-multi="true">
+            <button class="pill" data-value="Account">Account</button>
+            <button class="pill" data-value="Usage">Usage</button>
+            <button class="pill" data-value="Device">Device</button>
+            <button class="pill" data-value="Location">Location</button>
+            <button class="pill" data-value="Contacts">Contacts</button>
+          </div>
+        </div>
+        <div>
+          <label>Analytics / Monetization</label>
+          <div id="qAnalytics" class="pillbar" data-multi="true">
+            <button class="pill" data-value="Firebase Analytics">Firebase Analytics</button>
+            <button class="pill" data-value="Google Analytics">Google Analytics</button>
+            <button class="pill" data-value="Ads">Ads</button>
+            <button class="pill" data-value="In-app Purchases">In-app Purchases</button>
+          </div>
+        </div>
+        <div>
+          <label for="qRetention">Retention policy (free text)</label>
+          <input id="qRetention" placeholder="e.g. We retain data only as long as necessary…">
+        </div>
+      </div>
+
+      <div id="s3" class="row-1 hidden">
+        <div>
+          <label>Tone</label>
+          <div id="qTone" class="pillbar" data-multi="false">
+            <button class="pill" data-value="professional">Professional</button>
+            <button class="pill" data-value="playful">Playful</button>
+            <button class="pill" data-value="techy">Techy</button>
+            <button class="pill" data-value="minimal">Minimal</button>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="qTheme">Theme</label>
+            <select id="qTheme">
+              <option value="Card">Card</option>
+              <option value="Aurora">Aurora</option>
+              <option value="Glass">Glass</option>
+              <option value="Neon">Neon</option>
+              <option value="Paper">Paper</option>
+              <option value="Columns">Columns</option>
+            </select>
+          </div>
+          <div>
+            <label for="qAccent">Accent color</label>
+            <input id="qAccent" type="color" value="#6aa7ff" />
+          </div>
+        </div>
+        <div>
+          <label for="qBg">Background fx</label>
+          <select id="qBg">
+            <option value="none">None</option>
+            <option value="Aurora">Aurora</option>
+            <option value="Grid">Grid</option>
+            <option value="Noise">Noise</option>
+            <option value="Vignette">Vignette</option>
+          </select>
+        </div>
+        <div>
+          <label for="qExtra">Extra instructions</label>
+          <textarea id="qExtra" placeholder="Any extra details for the AI..."></textarea>
+        </div>
+      </div>
+
+      <div id="s4" class="row-1 hidden">
+        <label>Generated AI prompt (editable)</label>
+        <textarea id="aiPrompt"></textarea>
+      </div>
+
+      <div class="actions">
+        <button id="aiPrev" class="ghost" disabled>Back</button>
+        <button id="aiNext" class="ghost">Next</button>
+        <button id="aiPreviewBtn" class="btn hidden">Preview with AI</button>
+      </div>
+    </section>
+
+    <div class="foot">Created by <strong>Meher Davanci</strong> © 2025 —
+      <a href="https://www.davanciink.com" target="_blank" rel="noopener">www.davanciink.com</a>
     </div>
   </div>
 
-  <footer class="wrap" style="text-align:center;color:#a9b7da;font-size:13px;margin:16px 0">
-    Created by <strong>Meher Davanci</strong> © 2025 — <a href="https://www.davanciink.com" target="_blank" rel="noopener">www.davanciink.com</a>
-  </footer>
-
-  <div id="aiModal" class="modal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle">
-      <div class="modal-bar">
-        <div id="aiModalTitle" class="modal-title">Preview</div>
-        <div style="flex:1"></div>
-        <button id="aiRefreshBtn" class="icon-btn ghost" title="Refresh">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 0 1 15.54-5.64M21 12a9 9 0 0 1-15.54 5.64" stroke-width="2"/><path d="M3 4v6h6M21 20v-6h-6" stroke-width="2"/></svg>
-          <span>Refresh</span>
-        </button>
-        <button id="aiPublishBtn" class="icon-btn btn" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-width="2"/></svg>
-          <span>Use this version</span>
-        </button>
-        <button id="aiCloseBtn" class="icon-btn ghost" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6L6 18" stroke-width="2"/></svg>
-          <span>Close</span>
-        </button>
+  <!-- Modal -->
+  <div id="previewModal" class="modal" aria-hidden="true">
+    <div class="panel">
+      <div class="panel-head">
+        <strong>AI Preview</strong>
+        <div class="grow"></div>
+        <div class="panel-actions">
+          <button id="refreshPreview" class="ghost">Refresh</button>
+          <button id="usePreview" class="btn">Use this version</button>
+          <button id="closePreview" class="ghost">Close</button>
+        </div>
       </div>
-      <div class="modal-body" id="aiModalBody">
-        <div id="aiModalHint" class="modal-hint">Generating preview…</div>
-        <iframe id="aiFrame" title="preview" sandbox="allow-same-origin"></iframe>
-      </div>
+      <iframe id="previewFrame" class="panel-body" sandbox="allow-same-origin"></iframe>
     </div>
   </div>
 </body>
